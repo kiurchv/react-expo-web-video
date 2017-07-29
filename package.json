@@ -1,6 +1,6 @@
 {
   "name": "react-expo-web-video",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Universal video component for React Native Expo SDK apps and web",
   "main": "lib/index.web.js",
   "module": "es/index.web.js",
