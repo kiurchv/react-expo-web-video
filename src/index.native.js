@@ -1,69 +1,109 @@
 import { createElement } from "react";
-import { Components } from "expo";
+import { Video as NativeVideo } from "expo";
+
+import { omitKeys } from "./utils";
+
+const IGNORED_PROPS = [
+  "onAbort",
+  "onCanplay",
+  "onCanplayThrough",
+  "onDurationChange",
+  "onEmptied",
+  "onEncrypted",
+  "onEnded",
+  "onInterruptBegin",
+  "onInterruptEnd",
+  "onLoadedData",
+  "onPause",
+  "onPlay",
+  "onPlaying",
+  "onRateChange",
+  "onSeeking",
+  "onStalled",
+  "onSuspend",
+  "onTimeUpdate",
+  "onVolumeChange",
+  "onWaiting"
+];
 
 export default function Video({
-  src: source,
-  playsInline = true,
-  resizeMode,
+  ref: givenRef,
+  src,
+  source = { uri: src },
+  poster,
+  posterSource = poster ? { uri: poster } : undefined,
+  usePoster = !!poster,
+  controls: useNativeControls,
+  autoPlay: shouldPlay,
+  paused = !shouldPlay,
   loop: repeat,
-  autoPlay,
-  volume,
+  isLooping = repeat,
   muted,
-  rate,
-  ref,
+  isMuted = muted,
   height,
   width,
-  style,
-  onLoadStart,
-  onLoad,
+  style = [{ width, height }, style],
+  onLoadStart: givenOnLoadStart,
+  onLoad: givenOnLoad,
   onLoadedMetadata,
-  onError,
-  onProgress,
-  onSeek,
+  onProgress: givenOnProgress,
+  onSeek: givenOnSeek,
   onSeeked,
-  onEnd
+  onEnded: onEnd,
+  ...props
 }) {
+  props = omitKeys(props, IGNORED_PROPS);
+
   let target;
 
-  ref = video => {
+  const ref = video => {
     target = video;
-    return ref(video);
+
+    if (givenRef) return givenRef(video);
   };
 
-  style = [{ width, height }, style];
+  const onLoadStart = givenOnLoadStart
+    ? args => givenOnLoadStart({ ...args, target })
+    : givenOnLoadStart;
 
-  onLoadStart = onLoadStart
-    ? args => onLoadStart({ ...args, target })
-    : undefined;
+  const onLoad = onLoadedMetadata
+    ? args => {
+        onLoadedMetadata({ target });
 
-  if (!onLoaded && onLoadedMetadata) {
-    onLoaded = () => onLoadedMetadata({ target });
-  }
+        if (givenOnLoad) givenOnLoad(args);
+      }
+    : givenOnLoad;
 
-  onProgress = onProgress
-    ? args => onProgress({ ...args, target })
-    : undefined;
+  const onProgress = givenOnProgress
+    ? args => givenOnProgress({ ...args, target })
+    : givenOnProgress;
 
-  if (!onSeek && onSeeked) {
-    onSeek = () => onSeeked({ target });
-  }
+  const onSeek = onSeeked
+    ? args => {
+        onSeeked({ target });
 
-  return createElement(Components.Video, {
-    source,
-    fullscreen: !playsInline,
-    resizeMode,
-    repeat,
-    paused: !autoPlay,
-    volume,
-    muted,
-    rate,
+        if (givenOnSeek) return givenOnSeek(args);
+      }
+    : givenOnSeek;
+
+  return createElement(NativeVideo, {
     ref,
+    source,
+    poster,
+    usePoster,
+    useNativeControls,
+    shouldPlay,
+    paused,
+    repeat,
+    isLooping,
+    muted,
+    isMuted,
     style,
     onLoadStart,
     onLoad,
-    onError,
     onProgress,
     onSeek,
-    onEnd
+    onEnd,
+    ...props
   });
 }

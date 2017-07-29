@@ -1,72 +1,108 @@
 import { createElement } from "react";
 
+import { isObject, omitKeys } from "./utils";
+
+const IGNORED_PROPS = [
+  "resizeMode",
+  "volume",
+  "rate",
+  "status",
+  "progressUpdateIntervalMillis",
+  "positionMillis",
+  "shouldCorrectPitch",
+  "callback",
+  "onReadyForDisplay",
+  "onIOSFullscreenUpdate"
+];
+
 export default function Video({
-  source: src,
+  source,
+  src = isObject(source) ? source.uri : undefined,
+  posterSource,
+  usePoster,
+  poster = usePoster && isObject(posterSource) ? posterSource.uri : undefined,
+  useNativeControls: controls,
   fullscreen,
-  resizeMode,
-  repeat: loop,
-  paused: autoPlay,
-  volume,
-  rate,
-  onLoadStart,
+  playsInline = !fullscreen,
+  paused,
+  shouldPlay: autoPlay = !paused,
+  repeat,
+  isLooping,
+  loop = repeat || isLooping,
+  isMuted: muted,
+  onLoadStart: givenOnLoadStart,
   onLoad,
-  onProgress,
+  onLoadedMetadata: givenOnLoadedMetadata,
+  onProgress: givenOnProgress,
   onSeek,
+  onSeeking: givenOnSeeking,
+  onSeeked: givenOnSeeked,
   onEnd: onEnded,
   ...props
 }) {
-  src = src === Object(src) ? src.uri : src;
+  props = omitKeys(props, IGNORED_PROPS);
 
-  if (onLoadStart) {
-    onLoadStart = event => {
-      const { currentSrc: uri } = event.target;
+  const onLoadStart = givenOnLoadStart
+    ? event => {
+        const { currentSrc: uri } = event.target;
 
-      return onLoadStart({ ...event, uri });
-    };
-  }
+        return givenOnLoadStart({ ...event, uri });
+      }
+    : givenOnLoadStart;
 
   const onLoadedMetadata = onLoad
-    ? ({
-        target: {
-          duration,
-          currentTime,
-          videoWidth: width,
-          videoHeight: height
-        }
-      }) =>
+    ? event => {
+        const { duration, currentTime, videoWidth, videoHeight } = event.target;
+
         onLoad({
           duration,
           currentTime,
-          naturalSize: { width, height }
-        })
-    : undefined;
+          naturalSize: { width: videoWidth, height: videoHeight }
+        });
 
-  if (onProgress) {
-    onProgress = event => {
-      const { currentTime, buffered: { length } } = event.target;
+        if (givenOnLoadedMetadata) return givenOnLoadedMetadata(event);
+      }
+    : givenOnLoadedMetadata;
 
-      return onProgress({ ...event, currentTime, playableDuration: length });
-    };
-  }
+  const onProgress = givenOnProgress
+    ? event => {
+        const { currentTime, buffered: { length } } = event.target;
+
+        return givenOnProgress({
+          ...event,
+          currentTime,
+          playableDuration: length
+        });
+      }
+    : givenOnProgress;
 
   let beforeSeekTime;
 
   const onSeeking = onSeek
-    ? ({ target: { currentTime } }) => {
-        beforeSeekTime = currentTime;
+    ? event => {
+        beforeSeekTime = event.target.currentTime;
+
+        if (givenOnSeeking) return givenOnSeeking(event);
       }
-    : undefined;
+    : givenOnSeeking;
 
   const onSeeked = onSeek
-    ? ({ target: { currentTime } }) =>
-        onSeek({ currentTime: beforeSeekTime, seekTime: currentTime })
-    : undefined;
+    ? event => {
+        const { target: { currentTime: seekTime } } = event;
+
+        onSeek({ currentTime: beforeSeekTime, seekTime });
+        if (givenOnSeeked) return givenOnSeeked(event);
+      }
+    : givenOnSeeked;
 
   return createElement("video", {
     src,
-    playsInline: !fullscreen,
-    loop,
+    poster,
+    controls,
+    playsInline,
     autoPlay,
+    loop,
+    muted,
     onLoadStart,
     onLoadedMetadata,
     onProgress,

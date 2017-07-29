@@ -2,13 +2,14 @@
   "name": "react-expo-web-video",
   "version": "1.0.2",
   "description": "Universal video component for React Native Expo SDK apps and web",
-  "main": "lib/index.js",
+  "main": "lib/index.web.js",
   "module": "es/index.web.js",
   "react-native": "src/index.native.js",
   "files": [
     "es",
     "lib",
-    "src/index.native.js"
+    "src/index.native.js",
+    "src/utils.js"
   ],
   "repository": "https://github.com/kiurchv/react-expo-web-video",
   "author": "Myroslav Kiurchev <kiurchv@gmail.com> (https://github.com/kiurchv/)",
@@ -25,13 +26,13 @@
     "babel-preset-env": "^1.6.0"
   },
   "peerDependencies": {
-    "expo": "^13.0.0",
+    "expo": "^15.0.0",
     "react": "^15.0.0"
   },
   "scripts": {
     "build": "npm run build:es && npm run build:cjs",
-    "build:es": "BABEL_ENV=cjs babel src/index.web.js --out-file lib/index.js",
-    "build:cjs": "babel src/index.web.js --out-file es/index.js",
+    "build:cjs": "BABEL_ENV=cjs babel src --out-dir lib --ignore *.native.js",
+    "build:es": "babel src --out-dir es --ignore *.native.js",
     "prepublish": "npm run build"
   }
 }
