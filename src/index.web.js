@@ -16,6 +16,7 @@ const IGNORED_PROPS = [
 ];
 
 export default function Video({
+  videoRef: ref,
   source,
   src = isObject(source) ? source.uri : undefined,
   posterSource,
@@ -96,6 +97,7 @@ export default function Video({
     : givenOnSeeked;
 
   return createElement("video", {
+    ref,
     src,
     poster,
     controls,

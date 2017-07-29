@@ -27,7 +27,7 @@ const IGNORED_PROPS = [
 ];
 
 export default function Video({
-  ref: givenRef,
+  videoRef,
   src,
   source = { uri: src },
   poster,
@@ -59,7 +59,7 @@ export default function Video({
   const ref = video => {
     target = video;
 
-    if (givenRef) return givenRef(video);
+    if (videoRef) return videoRef(video);
   };
 
   const onLoadStart = givenOnLoadStart
